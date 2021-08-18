@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "start": "node server/index.js",
-    "build": "cd client && npm install && npm run build",
     "dev": "env-cmd ./config/dev.env nodemon server/index.js"
   },
   "engines": {
