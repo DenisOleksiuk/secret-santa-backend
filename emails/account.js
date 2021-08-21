@@ -1,14 +1,6 @@
 const nodemailer = require('nodemailer');
 
-//   let info = await transporter.sendMail({
-//     from: '"Fred Foo 👻" <foo@example.com>', // sender address
-//     to: 'bar@example.com, baz@example.com', // list of receivers
-//     subject: 'Hello ✔', // Subject line
-//     text: 'Hello world?', // plain text body
-//     html: '<b>Hello world?</b>', // html body
-//   });
-
-let transporter = nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.MAIL_USER,
@@ -16,16 +8,16 @@ let transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async (email, name, link, password) => {
+const sendEmail = async (email, link, password) => {
   try {
-    const res = await transporter.sendMail({
+    await transporter.sendMail({
       from: '"Fred Foo 👻" denisolexyuk@gmail.com',
       to: email,
       subject: 'Sending Email using Node.js',
       html: `
-        <b>Take your password! ${name} => ${password}</b>
+        <b>Take your password! ${password}</b>
         <hr />
-        <a href="${link}">Let's Go!</a>
+        <a href="${link}">This is your invite link!</a>
       `,
     });
   } catch (error) {

@@ -1,9 +1,15 @@
 const express = require('express');
-const generator = require('generate-password');
 const User = require('../modules/user');
-const router = new express.Router();
 const auth = require('../middlewares/auth');
 const { sendEmail } = require('../emails/account');
+const Invite = require('../modules/invite');
+const {
+  generateRandomShift,
+  shiftNames,
+  generateUniquePasswords,
+} = require('../utils/sendFriendsRequest');
+
+const router = new express.Router();
 
 router.post('/users/login', async (req, res) => {
   try {
@@ -37,24 +43,35 @@ router.get('/users/me', auth, async (req, res) => {
   }
 });
 
-// In work
-router.post('/users/send', (req, res) => {
-  console.log(req.body);
-  // sendEmail('denisolexyuk@gmail.com', 'Denis', 'http://localhost:3001', 'password123');
+router.post('/users/send', async (req, res) => {
+  const arrayOfFriends = req.body;
+  const shift = generateRandomShift(arrayOfFriends.length);
+  const ShiftedArray = shiftNames(arrayOfFriends, shift);
+  const invites = await Invite.find({});
+  const passwords = generateUniquePasswords(arrayOfFriends.length, invites);
+  ShiftedArray.forEach((friend, i) => (friend.password = passwords[i]));
+  const inviteLink = 'https://jolly-ride-55b681.netlify.app/invite';
 
+  for (let i = 0; i < ShiftedArray.length; i++) {
+    const friend = ShiftedArray[i];
+    await sendEmail(friend.email, inviteLink, friend.password);
+    await new Invite({ name: friend.name, password: friend.password }).save();
+  }
   res.send();
 });
 
-// In work
-router.post('/users/invite', (req, res) => {
+router.post('/users/invite', async (req, res) => {
   try {
     const pass = req.header('Authorization').replace('Basic ', '');
-    const decoded = new Buffer.from(pass, 'base64').toString().slice(1);
-    console.log(decoded);
-    const data = Math.random() > 0.5 ? 'Den' : 'Johnny';
-    res.send(data);
+    const decodedPass = new Buffer.from(pass, 'base64').toString().slice(1);
+    const invite = await Invite.findOne({ password: decodedPass });
+    if (invite) {
+      res.send(invite.name);
+    } else {
+      throw new Error('new error');
+    }
   } catch (error) {
-    res.status(404).send({ error: error.message });
+    res.status(401).send({ error: error.message });
   }
 });
 
