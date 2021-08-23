@@ -1,7 +1,7 @@
 const express = require('express');
 const User = require('../modules/user');
 const auth = require('../middlewares/auth');
-const { sendEmail } = require('../emails/account');
+const sendEmail = require('../emails/account');
 const Invite = require('../modules/invite');
 const {
   generateRandomShift,

@@ -25,6 +25,4 @@ const sendEmail = async (email, link, password) => {
   }
 };
 
-module.exports = {
-  sendEmail,
-};
+module.exports = sendEmail;
