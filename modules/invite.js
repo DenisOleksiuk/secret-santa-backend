@@ -6,11 +6,15 @@ const inviteSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  email: {
+    type: String,
+    trim: true,
+  },
+  friendsEmails: [String],
   password: {
     type: String,
     required: true,
     trim: true,
-    minlength: 7,
     validate(value) {
       if (value.length !== 10) {
         throw new Error('The password length less then 10 characters');

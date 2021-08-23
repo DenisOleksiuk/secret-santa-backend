@@ -1,8 +1,9 @@
 const express = require('express');
 const User = require('../modules/user');
+const Invite = require('../modules/invite');
 const auth = require('../middlewares/auth');
 const sendEmail = require('../emails/account');
-const Invite = require('../modules/invite');
+const basicAuth = require('../middlewares/basicAuth');
 const {
   generateRandomShift,
   shiftNames,
@@ -34,39 +35,52 @@ router.post('/users', async (req, res) => {
 router.get('/users/me', auth, async (req, res) => {
   try {
     const {
-      _doc: { age, email, name },
+      _doc: { email, name, _id },
     } = req.user;
 
-    res.send({ age, email, name });
+    res.send({ email, name, _id });
   } catch (e) {
     res.status(401).send({ message: 'Please authenticate', access: false });
   }
 });
 
+router.post('/users/wish', async (req, res) => {
+  const user = req.body;
+  const owner = await User.findById(user.user._id);
+  owner.wishes.push(user.wishes);
+  await owner.save();
+  res.send();
+});
+
 router.post('/users/send', async (req, res) => {
   const arrayOfFriends = req.body;
   const shift = generateRandomShift(arrayOfFriends.length);
-  const ShiftedArray = shiftNames(arrayOfFriends, shift);
-  const invites = await Invite.find({});
-  const passwords = generateUniquePasswords(arrayOfFriends.length, invites);
-  ShiftedArray.forEach((friend, i) => (friend.password = passwords[i]));
-  const inviteLink = 'https://jolly-ride-55b681.netlify.app/invite';
+  const shiftedArray = shiftNames(arrayOfFriends, shift);
+  const passwords = await generateUniquePasswords(arrayOfFriends.length);
+  shiftedArray.map((friend, i) => {
+    friend.password = passwords[i];
+    friend.friendsEmails = [];
+  });
 
-  for (let i = 0; i < ShiftedArray.length; i++) {
-    const friend = ShiftedArray[i];
-    await sendEmail(friend.email, inviteLink, friend.password);
-    await new Invite({ name: friend.name, password: friend.password }).save();
+  for (let i = 0; i < shiftedArray.length; i++) {
+    const friend = shiftedArray[i];
+    for (const user of shiftedArray) {
+      if (friend.email !== user.email) {
+        friend.friendsEmails.push(user.email);
+      }
+    }
+    await sendEmail(friend.email, process.env.INVITE_LINK, friend.password);
+    await new Invite(friend).save();
   }
   res.send();
 });
 
-router.post('/users/invite', async (req, res) => {
+router.post('/users/invite', basicAuth, async (req, res) => {
   try {
-    const pass = req.header('Authorization').replace('Basic ', '');
-    const decodedPass = new Buffer.from(pass, 'base64').toString().slice(1);
-    const invite = await Invite.findOne({ password: decodedPass });
-    if (invite) {
-      res.send(invite.name);
+    const users = await User.find({ email: { $in: req.invite.friendsEmails } });
+    const wishList = users.map((user) => ({ wishes: user.wishes, name: user.name }));
+    if (req.invite) {
+      res.send({ wishList, youAreSantaFor: req.invite.name });
     } else {
       throw new Error('new error');
     }

@@ -1,4 +1,5 @@
 const generator = require('generate-password');
+const Invite = require('../modules/invite');
 
 function shiftNames(friends, shift) {
   return friends.map((friend, i) => {
@@ -21,13 +22,12 @@ function generateRandomShift(lengthOfArray) {
   return shift;
 }
 
-function generateUniquePasswords(numOfPasswords, invites) {
+async function generateUniquePasswords(numOfPasswords) {
   const passwords = generator.generateMultiple(numOfPasswords, {
     numbers: true,
   });
-  return invites.find(({ password }) => passwords.includes(password))
-    ? generateUniquePasswords(numOfPasswords, invites)
-    : passwords;
+  const invites = await Invite.find({ password: { $in: passwords } });
+  return invites.length ? generateUniquePasswords(numOfPasswords) : passwords;
 }
 
 module.exports = {
