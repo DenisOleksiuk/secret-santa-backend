@@ -10,7 +10,11 @@ const inviteSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  friendsEmails: [String],
+  recipient: {
+    type: String,
+    trim: true,
+    required: true,
+  },
   password: {
     type: String,
     required: true,

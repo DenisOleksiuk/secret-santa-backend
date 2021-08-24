@@ -47,7 +47,7 @@ router.get('/users/me', auth, async (req, res) => {
 router.post('/users/wish', async (req, res) => {
   const user = req.body;
   const owner = await User.findById(user.user._id);
-  owner.wishes.push(user.wishes);
+  owner.wishes = user.wishes;
   await owner.save();
   res.send();
 });
@@ -55,37 +55,35 @@ router.post('/users/wish', async (req, res) => {
 router.post('/users/send', async (req, res) => {
   const arrayOfFriends = req.body;
   const shift = generateRandomShift(arrayOfFriends.length);
-  const shiftedArray = shiftNames(arrayOfFriends, shift);
+  let shiftedArray = shiftNames(arrayOfFriends, shift);
   const passwords = await generateUniquePasswords(arrayOfFriends.length);
-  shiftedArray.map((friend, i) => {
-    friend.password = passwords[i];
-    friend.friendsEmails = [];
-  });
+
+  for (let i = 0; i < shiftedArray.length; i++) {
+    shiftedArray[i].password = passwords[i];
+    delete shiftedArray[i]._id;
+  }
 
   for (let i = 0; i < shiftedArray.length; i++) {
     const friend = shiftedArray[i];
-    for (const user of shiftedArray) {
-      if (friend.email !== user.email) {
-        friend.friendsEmails.push(user.email);
-      }
-    }
-    await sendEmail(friend.email, process.env.INVITE_LINK, friend.password);
+    const friendEmail = arrayOfFriends.find((user) => friend.name === user.name).email;
+    friend.recipient = friendEmail;
     await new Invite(friend).save();
+    await sendEmail(friend.email, process.env.INVITE_LINK, friend.password);
   }
   res.send();
 });
 
 router.post('/users/invite', basicAuth, async (req, res) => {
   try {
-    const users = await User.find({ email: { $in: req.invite.friendsEmails } });
-    const wishList = users.map((user) => ({ wishes: user.wishes, name: user.name }));
+    const friend = await User.findOne({ email: req.invite.recipient });
     if (req.invite) {
-      res.send({ wishList, youAreSantaFor: req.invite.name });
+      const wishesOfFriend = friend ? friend.wishes : [];
+      res.send({ wishList: wishesOfFriend, youAreSantaFor: req.invite.name });
     } else {
-      throw new Error('new error');
+      throw new Error('Not found');
     }
   } catch (error) {
-    res.status(401).send({ error: error.message });
+    res.status(404).send({ error: error.message });
   }
 });
 
