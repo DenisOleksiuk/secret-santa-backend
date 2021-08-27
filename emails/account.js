@@ -8,18 +8,27 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async (email, link, password) => {
+const sendEmail = async (link, friend, owner) => {
   try {
-    await transporter.sendMail({
-      from: '"Fred Foo 👻" denisolexyuk@gmail.com',
-      to: email,
-      subject: 'Sending Email using Node.js',
-      html: `
-        <b>Take your password! ${password}</b>
+    if (friend.owner) {
+      await transporter.sendMail({
+        from: `${owner.name} 👻 ${owner.email}`,
+        to: owner.email,
+        subject: 'Sending Email using Node.js',
+        html: `<a href="${link}">This is your invite link!</a>`,
+      });
+    } else {
+      await transporter.sendMail({
+        from: `${owner.name} 👻 ${owner.email}`,
+        to: friend.email,
+        subject: 'Sending Email using Node.js',
+        html: `
+        <b>Take your password! ${friend.password}</b>
         <hr />
         <a href="${link}">This is your invite link!</a>
       `,
-    });
+      });
+    }
   } catch (error) {
     console.log(error);
   }

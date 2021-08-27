@@ -1,7 +1,7 @@
 const generator = require('generate-password');
 const Invite = require('../modules/invite');
 
-function shiftNames(friends, shift) {
+function randomize(friends, shift) {
   return friends.map((friend, i) => {
     let shiftedIndex = i - shift + friends.length;
     if (shiftedIndex >= friends.length) {
@@ -9,7 +9,7 @@ function shiftNames(friends, shift) {
     }
     return {
       ...friend,
-      name: friends[shiftedIndex].name,
+      receiver: { email: friends[shiftedIndex].email, name: friends[shiftedIndex].name },
     };
   });
 }
@@ -32,6 +32,6 @@ async function generateUniquePasswords(numOfPasswords) {
 
 module.exports = {
   generateRandomShift,
-  shiftNames,
+  randomize,
   generateUniquePasswords,
 };

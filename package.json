@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "env-cmd ./config/dev.env nodemon server/index.js"
+    "dev": "env-cmd ./config/dev.env nodemon index.js"
   },
   "engines": {
     "node": "14"

@@ -3,19 +3,21 @@ const validator = require('validator');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const generalTypes = {
+  type: String,
+  trim: true,
+};
+
 const userSchema = new mongoose.Schema(
   {
     name: {
-      type: String,
-      required: true,
-      trim: true,
+      ...generalTypes,
     },
     email: {
-      type: String,
+      ...generalTypes,
       unique: true,
-      required: true,
-      trim: true,
       lowercase: true,
+      required: true,
       validate(value) {
         if (!validator.isEmail(value)) {
           throw new Error('Email is invalid');
@@ -23,9 +25,8 @@ const userSchema = new mongoose.Schema(
       },
     },
     password: {
-      type: String,
+      ...generalTypes,
       required: true,
-      trim: true,
       minlength: 7,
       validate(value) {
         if (value.toLowerCase().includes('password')) {
@@ -33,12 +34,37 @@ const userSchema = new mongoose.Schema(
         }
       },
     },
-    wishes: [String],
+    wishes: [
+      {
+        wish: {
+          ...generalTypes,
+        },
+      },
+    ],
+    receiver: {
+      email: {
+        ...generalTypes,
+      },
+      name: {
+        ...generalTypes,
+      },
+      wishes: [
+        {
+          wish: {
+            ...generalTypes,
+          },
+        },
+      ],
+    },
+    friendsFormWasSubmitted: {
+      type: Boolean,
+      default: false,
+    },
     tokens: [
       {
         token: {
-          type: String,
-          require: true,
+          ...generalTypes,
+          required: true,
         },
       },
     ],
@@ -66,7 +92,7 @@ userSchema.methods.toJSON = function () {
 
   delete userObject.password;
   delete userObject.avatar;
-  delete userObject.token;
+  delete userObject.tokens;
 
   return userObject;
 };
